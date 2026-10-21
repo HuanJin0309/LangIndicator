@@ -24,6 +24,7 @@ public partial class MainWindow
         public const int RefreshDelay = 100;
         public const int AnimationDuration = 200;
         public const double WindowOffset = 10.0;
+        public const double CaretOffset = 20.0;
         public const string ChineseIcon = "\xe696";
         public const string EnglishIcon = "\xe695";
         public const string UpperCaseIcon = "\xe603";
@@ -136,7 +137,8 @@ public partial class MainWindow
         var currentScreen = screens.FirstOrDefault(x => x.Bounds.Contains(caretPoint.X, caretPoint.Y)) ?? screens.First();
         
         var x = caretPoint.X / currentScreen.ScaleFactor;
-        var y = caretPoint.Y / currentScreen.ScaleFactor; // 在光标下方20个像素显示
+        // 在光标下方偏移显示，避免遮挡正在输入的文字
+        var y = caretPoint.Y / currentScreen.ScaleFactor + Constant.CaretOffset;
         
         // 确保窗口不会超出屏幕边界
         var screenWidth = currentScreen.WpfWorkingArea.Width;
@@ -189,6 +191,10 @@ public partial class MainWindow
 
     private void HideHandle(object? state)
     {
+        // 应用退出过程中 Dispatcher 可能已关闭，此时直接忽略本次回调，避免抛出未处理异常
+        if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished)
+            return;
+
         Dispatcher.Invoke(() =>
         {
             LangTxt.Opacity = 0;
@@ -206,7 +212,8 @@ public partial class MainWindow
         var currentScreen = screens.FirstOrDefault(x => x.Bounds.Contains(point.X, point.Y)) ?? screens.First();
 
         var x = point.X / currentScreen.ScaleFactor;
-        var y = point.Y / currentScreen.ScaleFactor;
+        // 在鼠标下方偏移显示
+        var y = point.Y / currentScreen.ScaleFactor + Constant.CaretOffset;
 
         // 确保窗口不会超出屏幕边界
         var screenWidth = currentScreen.WpfWorkingArea.Width;
@@ -255,6 +262,8 @@ public partial class MainWindow
         _hiddenTimer.Dispose();
         _refreshTimer.Stop();
         _gcHandle.Dispose();
+        // 释放托盘图标，避免退出程序后图标残留在系统托盘中
+        NotifyIcon.Dispose();
         base.OnClosed(e);
     }
 
@@ -274,7 +283,6 @@ public partial class MainWindow
         }
         Startup.IsChecked = Config.IsStartup;
         ShowSymbol.IsChecked = Config.IsShowSymbol;
-        ShowShape.IsChecked = Config.IsShowFullShape;
         ShowShape.IsChecked = Config.IsShowFullShape;
         SetHiddenDelayMultiplier(Config.HiddenDelayMultiplier);
     }
