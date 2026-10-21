@@ -1,4 +1,4 @@
-name: Public STranslate
+name: LangIndicator
 
 # https://github.com/softprops/action-gh-release/issues/236#issuecomment-1150530128
 # 无需 Token 即可发布
@@ -15,24 +15,20 @@ on:
 jobs:
   # 以下为构建工作流
   build:
-    runs-on: windows-latest # 添加EnableWindowsTargeting可支持跨平台编译WPF项目
-    # TODO: job 之间传递参数
-    # outputs:
-      # fileHash: ${{ steps.calculate_hash.outputs.hash }}
+    runs-on: windows-latest
 
     steps:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Setup
-      uses: actions/setup-dotnet@v1
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
 
-    - name: Publish
+    - name: Publish & Compress
       run: |
-        .\publish.ps1
-        .\7z.ps1 ${{ github.ref_name }}
+        .\publish.ps1 -Version ${{ github.ref_name }}
 
     - name: Release
       uses: softprops/action-gh-release@v2
